@@ -32,7 +32,18 @@ QT_BEGIN_NAMESPACE
 class QPainter;
 class QSvgGenerator;
 class QPdfWriter;
+class QIODevice;
 QT_END_NAMESPACE
+
+class TopoDS_Edge;
+class Geom_Curve;
+class Geom_Line;
+class Geom_Circle;
+class Geom_Ellipse;
+
+namespace opencascade {
+    template<class T> class handle;
+}
 
 namespace TechDraw
 {
@@ -40,6 +51,8 @@ namespace TechDraw
 class DrawPage;
 class DrawTemplate;
 class DrawView;
+class DrawViewPart;
+class DrawViewAnnotation;
 
 /**
  * @brief Headless renderer for TechDraw pages
@@ -95,13 +108,33 @@ private:
     void setupPainter(QPainter& painter) const;
     void renderTemplate(QPainter& painter) const;
     void calculatePageBounds(double& width, double& height) const;
+    void configureSvgGenerator(QSvgGenerator& generator,
+                               QIODevice* device,
+                               double widthMM,
+                               double heightMM) const;
     void setError(const std::string& message) const;
     void clearError() const { m_lastError.clear(); }
 
-    // Phase 2+ (Future): View rendering internals
-    // void renderViews(QPainter& painter) const;
-    // void renderDimensions(QPainter& painter) const;
-    // void renderAnnotations(QPainter& painter) const;
+    // Phase 2: View rendering internals
+    void renderViews(QPainter& painter) const;
+    void renderViewPart(QPainter& painter, const DrawViewPart* view) const;
+    void renderViewAnnotation(QPainter& painter, const DrawViewAnnotation* view) const;
+    void renderEdge(QPainter& painter, const TopoDS_Edge& edge, double pixelsPerMM,
+                    double offsetX, double offsetY, bool invertY) const;
+
+    // Geometry rendering helpers
+    void renderLine(QPainter& painter, const opencascade::handle<Geom_Line>& line,
+                   double first, double last, double pixelsPerMM, double offsetX,
+                   double offsetY, bool invertY) const;
+    void renderCircle(QPainter& painter, const opencascade::handle<Geom_Circle>& circle,
+                     double first, double last, double pixelsPerMM, double offsetX,
+                     double offsetY, bool invertY) const;
+    void renderEllipse(QPainter& painter, const opencascade::handle<Geom_Ellipse>& ellipse,
+                      double first, double last, double pixelsPerMM, double offsetX,
+                      double offsetY, bool invertY) const;
+    void renderGenericCurve(QPainter& painter, const opencascade::handle<Geom_Curve>& curve,
+                           double first, double last, double pixelsPerMM, double offsetX,
+                           double offsetY, bool invertY) const;
 
     // Member variables
     const DrawPage* m_page;
